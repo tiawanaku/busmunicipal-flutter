@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-void main() {
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(
     ChangeNotifierProvider(
       create: (context) => TicketCounter(),
@@ -18,7 +23,9 @@ class TicketCounter extends ChangeNotifier {
   double totalSpecialBs = 0;
   List<Ticket> tickets = [];
 
-  void addTicket(String code) {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  void addTicket(String code) async {
     final dateTime = DateTime.now();
     final formattedDate = '${dateTime.toIso8601String().substring(0, 10)} ${dateTime.toIso8601String().substring(11, 19)}';
     double cost;
@@ -31,25 +38,37 @@ class TicketCounter extends ChangeNotifier {
       regularTickets++;
     }
 
-    tickets.add(Ticket(
+    final ticket = Ticket(
       number: regularTickets + specialTickets,
       code: code,
       dateTime: formattedDate,
       cost: cost,
-    ));
+    );
+
+    tickets.add(ticket);
 
     totalRegularBs = regularTickets * 1.5;
     totalSpecialBs = specialTickets * 1;
 
+    // Guardar en Firestore
+    await _firestore.collection('tickets').add(ticket.toMap());
+
     notifyListeners();
   }
 
-  void resetCounters() {
+  void resetCounters() async {
     regularTickets = 0;
     specialTickets = 0;
     totalRegularBs = 0;
     totalSpecialBs = 0;
     tickets.clear();
+
+    // Borrar todos los tickets en Firestore
+    final snapshot = await _firestore.collection('tickets').get();
+    for (var doc in snapshot.docs) {
+      await doc.reference.delete();
+    }
+
     notifyListeners();
   }
 }
@@ -66,6 +85,15 @@ class Ticket {
     required this.dateTime,
     required this.cost,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'number': number,
+      'code': code,
+      'dateTime': dateTime,
+      'cost': cost,
+    };
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -79,6 +107,7 @@ class MyApp extends StatelessWidget {
 
 class TicketCounterScreen extends StatelessWidget {
   final TextEditingController _barcodeController = TextEditingController();
+  final FocusNode _barcodeFocusNode = FocusNode(); // Agregar esta línea
 
   void _showPaseDialog(BuildContext context) {
     showDialog(
@@ -87,6 +116,7 @@ class TicketCounterScreen extends StatelessWidget {
       builder: (BuildContext context) {
         Future.delayed(Duration(seconds: 2), () {
           Navigator.of(context).pop();
+          _barcodeFocusNode.requestFocus(); // Enfocar el TextField
         });
         return AlertDialog(
           title: Text('Notificación'),
@@ -117,6 +147,7 @@ class TicketCounterScreen extends StatelessWidget {
         child: Column(
           children: [
             TextField(
+              focusNode: _barcodeFocusNode, // Asignar el focusNode
               controller: _barcodeController,
               decoration: InputDecoration(
                 labelText: 'Código de Boleto',

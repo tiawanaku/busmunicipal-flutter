@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "303769184697",
+    "project_id": "bus-recaudo",
+    "storage_bucket": "bus-recaudo.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:303769184697:android:fdb70e4c883f14490eae68",
+        "android_client_info": {
+          "package_name": "com.example.busmunicipal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2wxfF0vZRKMByT9nKsFaQvlZ9jGt2E9k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
